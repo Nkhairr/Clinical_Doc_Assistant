@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClinicalDoc Summarizer - Professional Medical Documentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #0066CC;
+        }
+
+        header h1 {
+            color: #0066CC;
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #0066CC;
+        }
+
+        .card h2 {
+            color: #0066CC;
+            font-size: 18px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-icon {
+            font-size: 24px;
+        }
+
+        label {
+            display: block;
+            color: #333;
+            font-weight: 500;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            resize: vertical;
+            min-height: 200px;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #0066CC;
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+        }
+
+        .char-count {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        button {
+            background: #0066CC;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+            width: 100%;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #0052a3;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #0066CC;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #0066CC;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab {
+            padding: 10px 15px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            color: #666;
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            color: #0066CC;
+            border-bottom-color: #0066CC;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .section {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 3px solid #10b981;
+        }
+
+        .section-title {
+            color: #0066CC;
+            font-weight: 600;
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+
+        .section-content {
+            color: #333;
+            font-size: 13px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .section-content.unavailable {
+            color: #999;
+            font-style: italic;
+        }
+
+        .confidence {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .confidence-bar {
+            flex: 1;
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: #10b981;
+            border-radius: 3px;
+        }
+
+        .confidence-text {
+            font-size: 12px;
+            color: #666;
+            min-width: 50px;
+        }
+
+        .disclaimer {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #92400e;
+            margin-top: 15px;
+        }
+
+        .red-flag-alert {
+            background: #fee2e2;
+            border-left: 4px solid #ef4444;
+            padding: 12px;
+            border-radius: 8px;
+            color: #991b1b;
+            margin-top: 15px;
+            font-size: 13px;
+        }
+
+        .diagnostic-alert {
+            background: #fecaca;
+            border-left: 4px solid #dc2626;
+            padding: 15px;
+            border-radius: 8px;
+            color: #7f1d1d;
+            margin-top: 15px;
+            font-size: 13px;
+        }
+
+        .diagnostic-alert strong {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .diagnostic-alert p {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        .diagnostic-alert .cta {
+            background: #dc2626;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-top: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .diagnostic-alert .cta:hover {
+            background: #b91c1c;
+        }
+
+        .copy-btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .copy-btn:hover {
+            background: #059669;
+        }
+
+        .error {
+            background: #fee2e2;
+            border-left: 4px solid #ef4444;
+            padding: 12px;
+            border-radius: 8px;
+            color: #991b1b;
+            margin-top: 15px;
+            font-size: 13px;
+        }
+
+        .success {
+            background: #dcfce7;
+            border-left: 4px solid #10b981;
+            padding: 12px;
+            border-radius: 8px;
+            color: #166534;
+            margin-top: 15px;
+            font-size: 13px;
+        }
+
+        footer {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .info-box {
+            background: #dbeafe;
+            border-left: 4px solid #0066CC;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #0c4a6e;
+            margin-bottom: 15px;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #dbeafe;
+            color: #0066CC;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-right: 5px;
+        }
+
+        .badge.ai {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge.safe {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge.warning {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📋 ClinicalDoc Summarizer</h1>
+            <p>Professional Clinical Documentation Assistant - Transform raw notes into organized summaries with AI-powered insights</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Input Section -->
+            <div class="card">
+                <h2><span class="card-icon">📝</span> Raw Clinical Note</h2>
+                
+                <div class="info-box">
+                    Paste your raw clinical note below. Our system will automatically extract key information, expand abbreviations, and generate a professional summary using AI.
+                </div>
+
+                <label for="clinical-note">Clinical Note</label>
+                <textarea id="clinical-note" placeholder="Paste your clinical note here..."></textarea>
+                <div class="char-count"><span id="char-count">0</span> characters</div>
+
+                <button onclick="summarizeNote()">✨ Summarize Note</button>
+
+                <div class="disclaimer">
+                    ⚠️ <strong>Important:</strong> This tool is for SUMMARIZING existing clinical notes only. It cannot provide medical diagnosis or treatment advice. Always consult with qualified healthcare professionals.
+                </div>
+            </div>
+
+            <!-- Output Section -->
+            <div class="card">
+                <h2><span class="card-icon">✅</span> Summary Result</h2>
+
+                <div id="loading" class="loading">
+                    <div class="spinner"></div>
+                    <p>Processing your clinical note...</p>
+                </div>
+
+                <div id="result-content" style="display: none;">
+                    <div style="margin-bottom: 15px;">
+                        <span id="badge-ai" class="badge ai" style="display: none;">🤖 AI Summary</span>
+                        <span id="badge-safe" class="badge safe" style="display: none;">✅ Safe</span>
+                        <span id="badge-warning" class="badge warning" style="display: none;">⚠️ Red Flags</span>
+                    </div>
+
+                    <div class="tabs">
+                        <button class="tab active" onclick="switchTab('sections')">Sections</button>
+                        <button class="tab" onclick="switchTab('ai')">AI Summary</button>
+                        <button class="tab" onclick="switchTab('details')">Details</button>
+                    </div>
+
+                    <div id="sections-tab" class="tab-content active">
+                        <div id="sections-container"></div>
+                    </div>
+
+                    <div id="ai-tab" class="tab-content">
+                        <div id="ai-summary-container"></div>
+                    </div>
+
+                    <div id="details-tab" class="tab-content">
+                        <div id="details-container"></div>
+                    </div>
+                    
+                    <div class="confidence">
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" id="confidence-fill" style="width: 85%;"></div>
+                        </div>
+                        <div class="confidence-text" id="confidence-text">85% confident</div>
+                    </div>
+
+                    <button class="copy-btn" onclick="copySummary()">📋 Copy Summary</button>
+                </div>
+
+                <div id="no-result" style="text-align: center; color: #999; padding: 40px 20px;">
+                    <p>No summary yet. Paste a clinical note and click "Summarize Note" to get started.</p>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>ClinicalDoc Summarizer v2.0 | Professional Medical Documentation System with AI Integration</p>
+            <p>© 2026 All rights reserved. For documentation support only.</p>
+        </footer>
+    </div>
+
+    <script>
+        const noteInput = document.getElementById('clinical-note');
+        const charCount = document.getElementById('char-count');
+
+        noteInput.addEventListener('input', function() {
+            charCount.textContent = this.value.length;
+        });
+
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        async function summarizeNote() {
+            const note = noteInput.value.trim();
+
+            if (!note) {
+                alert('Please enter a clinical note');
+                return;
+            }
+
+            if (note.length < 10) {
+                alert('Clinical note must be at least 10 characters');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result-content').style.display = 'none';
+            document.getElementById('no-result').style.display = 'none';
+
+            try {
+                const response = await fetch('/api/summarize', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ note: note })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displaySummary(data);
+                } else if (data.is_diagnostic_question) {
+                    showDiagnosticAlert(data);
+                } else {
+                    showError(data.error || 'Error processing note');
+                }
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function showDiagnosticAlert(data) {
+            const container = document.getElementById('sections-container');
+            container.innerHTML = `
+                <div class="diagnostic-alert">
+                    <strong>❌ This is not a clinical note - it's a diagnostic question!</strong>
+                    <p><strong>Error:</strong> ${data.error}</p>
+                    <p><strong>Message:</strong> ${data.message}</p>
+                    <p><strong>Note:</strong> ${data.suggestion}</p>
+                    <p style="margin-top: 12px; font-weight: 600;">
+                        🏥 Please consult a qualified healthcare professional for medical advice.
+                    </p>
+                </div>
+            `;
+            document.getElementById('result-content').style.display = 'block';
+            document.getElementById('no-result').style.display = 'none';
+        }
+
+        function displaySummary(data) {
+            // Display sections
+            const container = document.getElementById('sections-container');
+            container.innerHTML = '';
+
+            const sections = data.sections;
+            const icons = {
+                'demographics': '👤',
+                'chief_complaint': '🏥',
+                'medical_history': '📋',
+                'medications': '💊',
+                'allergies': '⚠️',
+                'vital_signs': '📊',
+                'observations': '👁️'
+            };
+
+            for (const [key, value] of Object.entries(sections)) {
+                const title = key.replace(/_/g, ' ').toUpperCase();
+                const icon = icons[key] || '📌';
+                const isUnavailable = value === 'Not available';
+
+                const sectionHTML = `
+                    <div class="section">
+                        <div class="section-title">${icon} ${title}</div>
+                        <div class="section-content ${isUnavailable ? 'unavailable' : ''}">
+                            ${value}
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += sectionHTML;
+            }
+
+            // Display AI summary
+            if (data.ai_summary) {
+                const aiContainer = document.getElementById('ai-summary-container');
+                aiContainer.innerHTML = `
+                    <div class="section">
+                        <div class="section-title">🤖 AI-Generated Summary</div>
+                        <div class="section-content">${data.ai_summary}</div>
+                    </div>
+                `;
+                document.getElementById('badge-ai').style.display = 'inline-block';
+            }
+
+            // Display details
+            const detailsContainer = document.getElementById('details-container');
+            let detailsHTML = '';
+
+            if (data.has_red_flags && data.red_flags.length > 0) {
+                detailsHTML += `
+                    <div class="red-flag-alert">
+                        <strong>⚠️ Red Flags Detected:</strong><br/>
+                        ${data.red_flags.join(', ')}<br/>
+                        <em>Immediate clinician notification may be required.</em>
+                    </div>
+                `;
+                document.getElementById('badge-warning').style.display = 'inline-block';
+            }
+
+            if (data.is_safe) {
+                detailsHTML += `
+                    <div class="success">
+                        ✅ Safety Check Passed - No diagnostic language detected
+                    </div>
+                `;
+                document.getElementById('badge-safe').style.display = 'inline-block';
+            }
+
+            detailsHTML += `
+                <div class="section">
+                    <div class="section-title">📊 Processing Details</div>
+                    <div class="section-content">
+                        <strong>Sections Found:</strong> ${data.sections_found}/7<br/>
+                        <strong>Confidence Score:</strong> ${Math.round(data.confidence * 100)}%<br/>
+                        <strong>Safety Status:</strong> ${data.is_safe ? '✅ Safe' : '⚠️ Warning'}<br/>
+                        <strong>Red Flags:</strong> ${data.has_red_flags ? '⚠️ Yes' : '✅ None'}<br/>
+                        <strong>Processed:</strong> ${new Date(data.timestamp).toLocaleString()}
+                    </div>
+                </div>
+            `;
+
+            detailsContainer.innerHTML = detailsHTML;
+
+            // Update confidence
+            const confidence = Math.round(data.confidence * 100);
+            document.getElementById('confidence-fill').style.width = confidence + '%';
+            document.getElementById('confidence-text').textContent = confidence + '% confident';
+
+            document.getElementById('result-content').style.display = 'block';
+            document.getElementById('no-result').style.display = 'none';
+        }
+
+        function showError(message) {
+            const container = document.getElementById('sections-container');
+            container.innerHTML = `<div class="error">❌ ${message}</div>`;
+            document.getElementById('result-content').style.display = 'block';
+            document.getElementById('no-result').style.display = 'none';
+        }
+
+        function copySummary() {
+            const sections = document.getElementById('sections-container').innerText;
+            const aiSummary = document.getElementById('ai-summary-container').innerText;
+            const allText = sections + '\n\n' + aiSummary;
+            
+            navigator.clipboard.writeText(allText).then(() => {
+                alert('Summary copied to clipboard!');
+            });
+        }
+    </script>
+</body>
+</html>
