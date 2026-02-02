@@ -286,38 +286,6 @@ Ensures:
 
 ---
 
-## 🌐 Deployment Options
-
-### Option 1: Heroku (Free tier available)
-```bash
-heroku login
-heroku create your-app-name
-git push heroku main
-```
-
-### Option 2: Railway
-1. Connect GitHub repo
-2. Deploy from dashboard
-3. Set `GITHUB_MODELS_TOKEN` environment variable
-
-### Option 3: Google Cloud Run
-```bash
-gcloud run deploy clinical-summarizer \
-  --source . \
-  --platform managed \
-  --region us-central1 \
-  --set-env-vars GITHUB_MODELS_TOKEN=your_token
-```
-
-### Option 4: Docker
-```bash
-docker build -t clinical-summarizer .
-docker run -p 5000:5000 \
-  -e GITHUB_MODELS_TOKEN=your_token \
-  clinical-summarizer
-```
-
----
 
 ## 📊 Performance
 
