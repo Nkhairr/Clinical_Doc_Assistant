@@ -1,6 +1,6 @@
 """
 Flask Web Application - Clinical Documentation Assistant
-Integrated with complete Colab backend (RAG, GitHub Models API, safety checks)
+
 """
 
 
