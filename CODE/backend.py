@@ -1,6 +1,5 @@
 """
-Clinical Documentation Assistant - Windows-Compatible Backend v3.3
-FIXED: Section extraction without capturing next marker labels
+Clinical Documentation Assistant
 """
 
 import os
@@ -863,4 +862,5 @@ if __name__ == "__main__":
     test_note = """Pt Profile: 32yo young adult. HPI: progressive SOB for two days. PMH/PSH: Hx of DM; no prior surgeries. FHx: no significant family history. Notes: no acute distress noted."""
     
     result = summarize_clinical_note(test_note)
+
     print(json.dumps(result, indent=2, default=str))
